@@ -1,0 +1,32 @@
+.topbar {
+    background: var(--bg-card);
+    color: var(--text);
+}
+
+.sidebar {
+    background: var(--sidebar-bg);
+    color: var(--sidebar-text);
+
+    a {
+        color: var(--sidebar-text);
+    }
+}
+
+.page-header {
+    color: var(--text);
+}
+
+.table {
+    background: var(--bg-card);
+    color: var(--text);
+}
+
+.members-page,
+.packages-page,
+.announcements-page,
+.reports-page,
+.settings-page,
+.workouts-page {
+    background: var(--bg);
+    color: var(--text);
+}
