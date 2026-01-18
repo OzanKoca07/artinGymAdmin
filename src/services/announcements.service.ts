@@ -1,34 +1,25 @@
-// src/services/announcements.service.ts
-import { apiGet, apiPost, apiDelete } from "./apiClient";
+import { apiGet, apiPost, apiDelete, apiPatch } from "./apiClient";
 import type { Announcement } from "../types/domain";
-
-// Backend hazır değil → UI test için boş liste
-const MOCK: Announcement[] = [];
 
 // LIST
 export const getAnnouncements = async (): Promise<Announcement[]> => {
-    try {
-        return await apiGet<Announcement[]>("/announcements");
-    } catch {
-        // backend yoksa UI çökmemeli
-        return MOCK;
-    }
+    const res = await apiGet<{ data: Announcement[] }>("/announcement");
+    return res.data ?? [];
 };
 
 // CREATE
 export const createAnnouncement = async (body: Partial<Announcement>) => {
-    try {
-        return await apiPost<Announcement>("/announcements", body);
-    } catch {
-        return null;
-    }
+    const res = await apiPost<{ data: Announcement }>("/announcement", body);
+    return res.data;
+};
+
+// UPDATE
+export const updateAnnouncement = async (id: number, body: Partial<Announcement>) => {
+    const res = await apiPatch<{ data: Announcement }>(`/announcement/${id}`, body);
+    return res.data;
 };
 
 // DELETE
-export const deleteAnnouncement = async (id: string) => {
-    try {
-        return await apiDelete<null>(`/announcements/${id}`);
-    } catch {
-        return null;
-    }
+export const deleteAnnouncement = async (id: number) => {
+    return await apiDelete<null>(`/announcement/${id}`);
 };

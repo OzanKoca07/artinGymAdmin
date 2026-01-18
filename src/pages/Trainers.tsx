@@ -103,10 +103,14 @@ const Trainers = () => {
     return (
         <div className="trainers-page">
             <div className="page-header">
-                <h2>Eğitmenler</h2>
-                <button className="btn-primary" onClick={openAddModal}>
-                    + Yeni Eğitmen
-                </button>
+                <div className="page-header">
+                    <h2>Eğitmenler</h2>
+
+                    <button className="btn btn-gold">
+                        + Yeni Eğitmen
+                    </button>
+                </div>
+
             </div>
 
             {loading && <p>Yükleniyor...</p>}
@@ -139,15 +143,17 @@ const Trainers = () => {
                                 </span>
                             </td>
                             <td style={{ display: "flex", gap: 8 }}>
-                                <button onClick={() => openEditModal(t)}>
-                                    Düzenle
-                                </button>
-                                <button
-                                    style={{ color: "#ef4444" }}
-                                    onClick={() => handleDelete(t.id)}
-                                >
-                                    Sil
-                                </button>
+                                <div className="btn-group">
+                                    <button className="btn btn-outline btn-sm" onClick={() => openEditModal(t)}>
+                                        Düzenle
+                                    </button>
+                                    <button
+                                        className="btn btn-danger btn-sm"
+                                        onClick={() => handleDelete(t.id)}
+                                    >
+                                        Sil
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     ))}

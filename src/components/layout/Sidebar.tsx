@@ -28,12 +28,6 @@ const Sidebar = () => {
                     <span className="nav-icon">📦</span>
                     Üyelik Paketleri
                 </NavLink>
-
-                <NavLink to="/workouts" className="nav-item">
-                    <span className="nav-icon">💪</span>
-                    Antrenman & Egzersiz
-                </NavLink>
-
                 <NavLink to="/announcements" className="nav-item">
                     <span className="nav-icon">📢</span>
                     Duyurular & Bildirim

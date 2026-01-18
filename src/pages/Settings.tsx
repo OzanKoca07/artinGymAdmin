@@ -1,158 +1,149 @@
-// src/pages/Settings.tsx
 import { useEffect, useState } from "react";
-import type { GymSettings } from "../types/domain";
-import { getGymSettings } from "../services/settings.service";
+
+type WorkingHours = {
+    open: string;
+    close: string;
+};
+
+type SettingsState = {
+    salonName: string;
+    address: string;
+    workingHours: WorkingHours;
+    capacity: number;
+};
+
+const DEFAULT_SETTINGS: SettingsState = {
+    salonName: "",
+    address: "",
+    workingHours: {
+        open: "08:00",
+        close: "22:00",
+    },
+    capacity: 50,
+};
 
 const Settings = () => {
-    const [settings, setSettings] = useState<GymSettings>({
-        name: "",
-        address: "",
-        openHour: "",
-        closeHour: "",
-        capacity: 0,
-    });
+    const [settings, setSettings] = useState<SettingsState>(DEFAULT_SETTINGS);
+    const [saved, setSaved] = useState(false);
 
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
-
-    // Modal
-    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-
-    // Form state
-    const [name, setName] = useState("");
-    const [address, setAddress] = useState("");
-    const [openHour, setOpenHour] = useState("");
-    const [closeHour, setCloseHour] = useState("");
-    const [capacity, setCapacity] = useState<number>(0);
-
-    const [formErrors, setFormErrors] = useState<string[]>([]);
-
-    // Load
-    const loadSettings = async () => {
-        try {
-            setLoading(true);
-            const res = await getGymSettings();
-
-            setSettings(res);
-            setName(res.name);
-            setAddress(res.address);
-            setOpenHour(res.openHour);
-            setCloseHour(res.closeHour);
-            setCapacity(res.capacity);
-        } catch {
-            setError("Ayarlar yüklenirken bir hata oluştu.");
-        } finally {
-            setLoading(false);
-        }
-    };
-
+    // 🔹 İlk yüklemede user + settings al
     useEffect(() => {
-        loadSettings();
+        const rawUser = localStorage.getItem("user");
+        const user = rawUser ? JSON.parse(rawUser) : null;
+
+        const storedSettings = localStorage.getItem("tenantSettings");
+
+        if (storedSettings) {
+            setSettings(JSON.parse(storedSettings));
+        } else if (user?.tenant) {
+            setSettings(prev => ({
+                ...prev,
+                salonName: user.tenant.name || "",
+                address: user.tenant.address || "",
+            }));
+        }
     }, []);
 
-    // Validation
-    const validateForm = () => {
-        const errors: string[] = [];
-
-        if (!name.trim()) errors.push("Salon adı boş olamaz.");
-        if (!openHour) errors.push("Açılış saati gereklidir.");
-        if (!closeHour) errors.push("Kapanış saati gereklidir.");
-        if (capacity <= 0) errors.push("Kapasite 1’den küçük olamaz.");
-
-        setFormErrors(errors);
-        return errors.length === 0;
+    const handleChange = (
+        e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    ) => {
+        const { name, value } = e.target;
+        setSettings(prev => ({
+            ...prev,
+            [name]: value,
+        }));
     };
 
-    // Save
-    const saveSettings = () => {
-        if (!validateForm()) return;
-
-        const updated: GymSettings = {
-            name,
-            address,
-            openHour,
-            closeHour,
-            capacity,
-        };
-
-        setSettings(updated);
-        setIsEditModalOpen(false);
+    const handleHoursChange = (field: "open" | "close", value: string) => {
+        setSettings(prev => ({
+            ...prev,
+            workingHours: {
+                ...prev.workingHours,
+                [field]: value,
+            },
+        }));
     };
 
-    // Reset
-    const resetForm = () => {
-        setName(settings.name);
-        setAddress(settings.address);
-        setOpenHour(settings.openHour);
-        setCloseHour(settings.closeHour);
-        setCapacity(settings.capacity);
-        setFormErrors([]);
+    const handleSave = () => {
+        localStorage.setItem("tenantSettings", JSON.stringify(settings));
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2000);
     };
 
     return (
         <div className="settings-page">
             <h2>Salon Ayarları</h2>
 
-            {loading && <p>Yükleniyor...</p>}
-            {error && <p style={{ color: "red" }}>{error}</p>}
+            {/* ---------------- SALON BİLGİLERİ ---------------- */}
+            <div className="card">
+                <h3>Salon Bilgileri</h3>
 
-            <div className="settings-box">
-                <p><strong>Salon Adı:</strong> {settings.name}</p>
-                <p><strong>Adres:</strong> {settings.address}</p>
-                <p><strong>Açılış – Kapanış:</strong> {settings.openHour} – {settings.closeHour}</p>
-                <p><strong>Kapasite:</strong> {settings.capacity}</p>
+                <label>Salon Adı</label>
+                <input
+                    type="text"
+                    name="salonName"
+                    value={settings.salonName}
+                    onChange={handleChange}
+                />
 
-                <button className="btn-primary" onClick={() => setIsEditModalOpen(true)}>
-                    Ayarları Düzenle
-                </button>
+                <label>Adres</label>
+                <textarea
+                    name="address"
+                    rows={3}
+                    value={settings.address}
+                    onChange={handleChange}
+                />
             </div>
 
-            {isEditModalOpen && (
-                <div className="modal-overlay">
-                    <div className="modal">
-                        <h3>Salon Ayarlarını Düzenle</h3>
+            {/* ---------------- ÇALIŞMA SAATLERİ ---------------- */}
+            <div className="card">
+                <h3>Çalışma Saatleri</h3>
 
-                        {formErrors.length > 0 && (
-                            <div style={{ color: "red" }}>
-                                {formErrors.map((e, i) => (
-                                    <div key={i}>{e}</div>
-                                ))}
-                            </div>
-                        )}
+                <div style={{ display: "flex", gap: 16 }}>
+                    <div>
+                        <label >Açılış</label>
+                        <input
+                            type="time"
+                            value={settings.workingHours.open}
+                            onChange={(e) => handleHoursChange("open", e.target.value)}
+                        />
+                    </div>
 
-                        <label>
-                            Salon Adı:
-                            <input value={name} onChange={(e) => setName(e.target.value)} />
-                        </label>
-
-                        <label>
-                            Adres:
-                            <input value={address} onChange={(e) => setAddress(e.target.value)} />
-                        </label>
-
-                        <label>
-                            Açılış Saati:
-                            <input type="time" value={openHour} onChange={(e) => setOpenHour(e.target.value)} />
-                        </label>
-
-                        <label>
-                            Kapanış Saati:
-                            <input type="time" value={closeHour} onChange={(e) => setCloseHour(e.target.value)} />
-                        </label>
-
-                        <label>
-                            Kapasite:
-                            <input type="number" value={capacity} onChange={(e) => setCapacity(Number(e.target.value))} />
-                        </label>
-
-                        <div className="modal-buttons">
-                            <button className="btn-primary" onClick={saveSettings}>Kaydet</button>
-                            <button onClick={resetForm}>Geri Al</button>
-                            <button onClick={() => setIsEditModalOpen(false)}>Kapat</button>
-                        </div>
+                    <div>
+                        <label>Kapanış</label>
+                        <input
+                            type="time"
+                            value={settings.workingHours.close}
+                            onChange={(e) => handleHoursChange("close", e.target.value)}
+                        />
                     </div>
                 </div>
-            )}
+            </div>
+
+            {/* ---------------- KAPASİTE ---------------- */}
+            <div className="card">
+                <h3>Yoğunluk & Kapasite</h3>
+
+                <label>Maksimum Kapasite (kişi)</label>
+                <input
+                    type="number"
+                    min={1}
+                    value={settings.capacity}
+                    onChange={(e) =>
+                        setSettings(prev => ({
+                            ...prev,
+                            capacity: Number(e.target.value),
+                        }))
+                    }
+                />
+            </div>
+
+            {/* ---------------- KAYDET ---------------- */}
+            <button className="btn btn-gold" onClick={handleSave}>
+                Ayarları Kaydet
+            </button>
+
+            {saved && <p style={{ color: "green" }}>Ayarlar kaydedildi ✅</p>}
         </div>
     );
 };

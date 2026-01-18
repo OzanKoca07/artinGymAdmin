@@ -103,10 +103,14 @@ const Packages = () => {
     return (
         <div className="packages-page">
             <div className="page-header">
-                <h2>Üyelik Paketleri</h2>
-                <button className="btn-primary" onClick={openAddModal}>
-                    + Yeni Paket Ekle
-                </button>
+                <div className="page-header">
+                    <h2>Üyelik Paketleri</h2>
+
+                    <button className="btn btn-gold">
+                        + Yeni Paket
+                    </button>
+                </div>
+
             </div>
 
             {loading && <p>Yükleniyor...</p>}
@@ -131,15 +135,15 @@ const Packages = () => {
                             </td>
                             <td>{p.price}</td>
                             <td style={{ display: "flex", gap: 8 }}>
-                                <button onClick={() => openEditModal(p)}>
-                                    Düzenle
-                                </button>
-                                <button
-                                    style={{ color: "#ef4444" }}
-                                    onClick={() => handleDelete(p.id)}
-                                >
-                                    Sil
-                                </button>
+                                <div className="btn-group">
+                                    <button className="btn btn-outline btn-sm" onClick={() => openEditModal(p)}>
+                                        Düzenle
+                                    </button>
+                                    <button className="btn btn-danger btn-sm"
+                                        onClick={() => handleDelete(p.id)}
+                                    >
+                                        Sil
+                                    </button></div>
                             </td>
                         </tr>
                     ))}

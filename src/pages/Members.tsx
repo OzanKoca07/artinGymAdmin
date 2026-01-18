@@ -3,6 +3,7 @@ import type { Member } from "../types/domain";
 import { getMembers } from "../services/members.service";
 import AddMemberForm from "../components/members/AddMemberForm";
 import { getMemberAttendance, getMemberPhysicalHistory } from "../services/members.service";
+import "../styles.css";
 
 
 const Members = () => {
@@ -64,11 +65,14 @@ const Members = () => {
                     marginBottom: 20,
                 }}
             >
-                <h2>Üye Yönetimi</h2>
+                <div className="page-header">
+                    <h2>Üye Yönetimi</h2>
 
-                <button className="btn-primary" onClick={() => setShowAddModal(true)}>
-                    + Yeni Üye Ekle
-                </button>
+                    <button className="btn btn-gold">
+                        + Yeni Üye
+                    </button>
+                </div>
+
             </div>
 
             {/* LOADING & ERROR */}

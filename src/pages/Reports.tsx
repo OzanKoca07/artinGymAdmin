@@ -1,179 +1,140 @@
-// src/pages/Reports.tsx
 import { useEffect, useState } from "react";
-import type { EntryLog, PaginatedResponse } from "../types/domain";
-import { getEntryLogs } from "../services/reports.service";
+import {
+    getActiveMembers,
+    getMemberAttendance,
+    getReportStats,
+    type ActiveMember,
+    type AttendanceDetail,
+} from "../services/reports.service";
 
 const Reports = () => {
-    const [logs, setLogs] = useState<EntryLog[]>([]);
-    const [from, setFrom] = useState<string>("");
-    const [to, setTo] = useState<string>("");
+    const [members, setMembers] = useState<ActiveMember[]>([]);
+    const [attendance, setAttendance] = useState<AttendanceDetail[]>([]);
+    const [selectedMember, setSelectedMember] = useState<ActiveMember | null>(null);
+
+    const [activeCount, setActiveCount] = useState(0);
+    const [insideCount, setInsideCount] = useState(0);
+    const [todayEntries, setTodayEntries] = useState(0);
+
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
-
-    // Modal kontrol
-    const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-
-    // Form Fields
-    const [memberName, setMemberName] = useState("");
-    const [entryTime, setEntryTime] = useState("");
-    const [exitTime, setExitTime] = useState("");
-
-    const loadLogs = async () => {
-        try {
-            setLoading(true);
-            setError("");
-
-            const res: PaginatedResponse<EntryLog> = await getEntryLogs({
-                from,
-                to,
-                page: 1,
-                limit: 100,
-            });
-
-            setLogs(res.data);
-        } catch {
-            setError("Kayıtlar yüklenirken bir hata oluştu.");
-        } finally {
-            setLoading(false);
-        }
-    };
 
     useEffect(() => {
-        loadLogs();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+        const load = async () => {
+            setLoading(true);
 
-    // Yeni Log Ekle
-    const addLog = () => {
-        const newLog: EntryLog = {
-            id: Date.now(),
-            memberId: Date.now(),
-            memberName,
-            entryTime,
-            exitTime: exitTime || undefined,
+            // 📌 Dashboard ile AYNI kaynaklar
+            const stats = await getReportStats();
+            setActiveCount(stats.activeMembers);
+            setTodayEntries(stats.todayEntries);
+
+            const data = await getActiveMembers();
+            setMembers(data);
+            setInsideCount(data.filter(m => m.isInside).length);
+
+            setLoading(false);
         };
 
-        setLogs((prev) => [newLog, ...prev]);
+        load();
+    }, []);
 
-        setIsAddModalOpen(false);
-
-        // Reset
-        setMemberName("");
-        setEntryTime("");
-        setExitTime("");
-    };
-
-    // Log Silme
-    const deleteLog = (id: number) => {
-        setLogs((prev) => prev.filter((x) => x.id !== id));
+    const openAttendance = async (m: ActiveMember) => {
+        setSelectedMember(m);
+        const list = await getMemberAttendance(m.id);
+        setAttendance(list);
     };
 
     return (
         <div className="reports-page">
-            <h2>Giriş – Çıkış Kayıtları</h2>
+            <h2>Raporlama & Loglar</h2>
 
-            <div className="list-toolbar">
-                <label>
-                    Başlangıç:
-                    <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
-                </label>
+            {/* ===== STATS ===== */}
+            <div className="stats-grid">
+                <div className="stat-box">
+                    <h3>Aktif Üye</h3>
+                    <div className="stat-value">{activeCount}</div>
+                </div>
 
-                <label>
-                    Bitiş:
-                    <input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
-                </label>
+                <div className="stat-box">
+                    <h3>Bugün Giriş</h3>
+                    <div className="stat-value">{todayEntries}</div>
+                </div>
 
-                <button className="btn-primary" onClick={loadLogs}>
-                    Filtrele
-                </button>
-
-                <button
-                    className="btn-primary"
-                    style={{ marginLeft: "auto" }}
-                    onClick={() => setIsAddModalOpen(true)}
-                >
-                    Manuel Log Ekle
-                </button>
+                <div className="stat-box">
+                    <h3>Şu An İçeride</h3>
+                    <div className="stat-value">{insideCount}</div>
+                </div>
             </div>
 
-            {isAddModalOpen && (
-                <div className="modal-overlay">
-                    <div className="modal">
-                        <h3>Yeni Log Ekle</h3>
-
-                        <label>
-                            Üye Adı:
-                            <input
-                                value={memberName}
-                                onChange={(e) => setMemberName(e.target.value)}
-                            />
-                        </label>
-
-                        <label>
-                            Giriş Saati:
-                            <input
-                                type="datetime-local"
-                                value={entryTime}
-                                onChange={(e) => setEntryTime(e.target.value)}
-                            />
-                        </label>
-
-                        <label>
-                            Çıkış Saati (Opsiyonel):
-                            <input
-                                type="datetime-local"
-                                value={exitTime}
-                                onChange={(e) => setExitTime(e.target.value)}
-                            />
-                        </label>
-
-                        <div className="modal-buttons">
-                            <button className="btn-primary" onClick={addLog}>
-                                Kaydet
-                            </button>
-                            <button onClick={() => setIsAddModalOpen(false)}>İptal</button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {loading && <p>Yükleniyor...</p>}
-            {error && <p style={{ color: "red" }}>{error}</p>}
-
-            <table className="table">
+            {/* ===== TABLE ===== */}
+            <table className="table" style={{ marginTop: 30 }}>
                 <thead>
                     <tr>
                         <th>Üye</th>
-                        <th>Giriş Saati</th>
-                        <th>Çıkış Saati</th>
+                        <th>Telefon</th>
+                        <th>İçeride mi?</th>
                         <th>İşlem</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {logs.map((l) => (
-                        <tr key={l.id}>
-                            <td>{l.memberName}</td>
-                            <td>{l.entryTime}</td>
-                            <td>{l.exitTime ?? "-"}</td>
+                    {members.length === 0 && (
+                        <tr>
+                            <td colSpan={4} style={{ textAlign: "center" }}>
+                                Kayıt bulunamadı
+                            </td>
+                        </tr>
+                    )}
+
+                    {members.map(m => (
+                        <tr key={m.id}>
+                            <td>{m.firstName} {m.lastName}</td>
+                            <td>{m.phoneNumber}</td>
+                            <td>{m.isInside ? "Evet" : "Hayır"}</td>
                             <td>
                                 <button
-                                    style={{
-                                        background: "red",
-                                        color: "white",
-                                        padding: "4px 8px",
-                                        borderRadius: "6px",
-                                        border: "none",
-                                        cursor: "pointer",
-                                    }}
-                                    onClick={() => deleteLog(l.id)}
+                                    className="btn-primary"
+                                    onClick={() => openAttendance(m)}
                                 >
-                                    Sil
+                                    Giriş–Çıkış Logları
                                 </button>
                             </td>
                         </tr>
                     ))}
                 </tbody>
             </table>
+
+            {/* ===== ATTENDANCE ===== */}
+            {selectedMember && (
+                <div style={{ marginTop: 30 }}>
+                    <h3>
+                        {selectedMember.firstName} {selectedMember.lastName} — Giriş Çıkış
+                    </h3>
+
+                    <table className="table">
+                        <thead>
+                            <tr>
+                                <th>Tarih</th>
+                                <th>Gün</th>
+                                <th>Giriş</th>
+                                <th>Çıkış</th>
+                                <th>Süre</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {attendance.map((a, i) => (
+                                <tr key={i}>
+                                    <td>{a.date}</td>
+                                    <td>{a.dayName}</td>
+                                    <td>{a.entryTime}</td>
+                                    <td>{a.exitTime ?? "-"}</td>
+                                    <td>{a.duration ?? "-"}</td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+
+            {loading && <p>Yükleniyor...</p>}
         </div>
     );
 };

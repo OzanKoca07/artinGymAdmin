@@ -9,6 +9,15 @@ export const api = axios.create({
     baseURL: BASE_URL,
     timeout: 10000,
 });
+// apiClient.ts
+
+export const apiPatch = async <T>(url: string, body: unknown): Promise<T> => {
+    const res = await api.patch<T>(url, body);
+    return res.data;
+};
+
+
+
 
 // ngrok warning bypass
 api.defaults.headers.common["ngrok-skip-browser-warning"] = "true";

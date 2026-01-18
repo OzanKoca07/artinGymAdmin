@@ -1,22 +1,50 @@
-// src/services/reports.service.ts
-import { apiGet, apiPost, apiDelete } from "./apiClient";
-import type { EntryLog, PaginatedResponse } from "../types/domain";
+import { apiGet } from "./apiClient";
 
-export interface GetEntryLogsParams {
-    from?: string; // "YYYY-MM-DD"
-    to?: string;   // "YYYY-MM-DD"
-    page?: number;
-    limit?: number;
-}
+/* ================= TYPES ================= */
 
-export const getEntryLogs = (params: GetEntryLogsParams) => {
-    return apiGet<PaginatedResponse<EntryLog>>("/logs", params);
+export type ActiveMember = {
+    id: number;
+    firstName: string;
+    lastName: string;
+    phoneNumber: string;
+    isInside: boolean;
+    status: string;
 };
 
-export const createLog = (body: Partial<EntryLog>) => {
-    return apiPost<EntryLog>("/logs", body);
+export type AttendanceDetail = {
+    date: string;
+    dayName: string;
+    entryTime: string;
+    exitTime: string | null;
+    duration: string | null;
+    fullDetail: string;
 };
 
-export const deleteLog = (id: number) => {
-    return apiDelete<null>(`/logs/${id}`);
+/* ================= API ================= */
+
+// 🔥 Dashboard ile AYNI
+export const getActiveMembers = async (): Promise<ActiveMember[]> => {
+    const res = await apiGet<any>("/member/active");
+    return res?.data ?? [];
+};
+
+export const getMemberAttendance = async (
+    memberId: number,
+    month?: number,
+    year?: number
+): Promise<AttendanceDetail[]> => {
+    const res = await apiGet<any>(
+        `/member/${memberId}/attendance`,
+        month && year ? { month, year } : undefined
+    );
+
+    return res?.data ?? [];
+};
+
+export const getReportStats = async () => {
+    const res = await apiGet<any>("/member/stats");
+    return {
+        activeMembers: res?.data?.activeMembers ?? 0,
+        todayEntries: res?.data?.todayEntries ?? 0,
+    };
 };
